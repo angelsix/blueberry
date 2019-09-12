@@ -105,7 +105,7 @@ namespace Blueberry.Desktop.WindowsApp.Bluetooth
         /// </summary>
         public DnaBluetoothLEAdvertisementWatcher()
         {
-            // Creat bluetooth listener
+            // Create bluetooth listener
             mWatcher = new BluetoothLEAdvertisementWatcher
             {
                 ScanningMode = BluetoothLEScanningMode.Active
@@ -136,22 +136,31 @@ namespace Blueberry.Desktop.WindowsApp.Bluetooth
             // Cleanup Timeouts
             CleanupTimeouts();
 
-            DnaBluetoothLEDevice device = null;
-
-            // Is new discovery?
-            var newDiscovery = !mDiscoveredDevices.ContainsKey(args.BluetoothAddress);
-
-            // Name changed?
-            var nameChanged =
-                // If it already exists
-                !newDiscovery &&
-                // And is not a blank  name
-                !string.IsNullOrEmpty(args.Advertisement.LocalName) &&
-                // And the name is different
-                mDiscoveredDevices[args.BluetoothAddress].Name != args.Advertisement.LocalName;
+            // Prepare variables to be set within the locked block
+            DnaBluetoothLEDevice device = default;
+            bool nameChanged = default;
+            bool newDiscovery = default;
 
             lock (mThreadLock)
             {
+                // It might happen that in the meantime we have stopped listening,
+                // but this method is still being executed, because it was waiting
+                // to get this lock. In that case, we do nothing more
+                if (!Listening)
+                    return;
+
+                // Is new discovery?
+                newDiscovery = !mDiscoveredDevices.ContainsKey(args.BluetoothAddress);
+
+                // Name changed?
+                nameChanged =
+                    // If it already exists
+                    !newDiscovery &&
+                    // And is not a blank  name
+                    !string.IsNullOrEmpty(args.Advertisement.LocalName) &&
+                    // And the name is different
+                    mDiscoveredDevices[args.BluetoothAddress].Name != args.Advertisement.LocalName;
+
                 // Get the name of the device
                 var name = args.Advertisement.LocalName;
 
@@ -232,7 +241,7 @@ namespace Blueberry.Desktop.WindowsApp.Bluetooth
                 // Start the underlying watcher
                 mWatcher.Start();
             }
-            
+
             // Inform listeners
             StartedListening();
         }

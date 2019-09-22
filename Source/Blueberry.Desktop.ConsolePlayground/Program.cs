@@ -10,7 +10,7 @@ namespace Blueberry.Desktop.ConsolePlayground
             Console.WriteLine("Hello World!");
 
             // New watcher
-            var watcher = new DnaBluetoothLEAdvertisementWatcher();
+            var watcher = new DnaBluetoothLEAdvertisementWatcher(new GattServiceIds());
 
             // Hook into events
             watcher.StartedListening += () =>

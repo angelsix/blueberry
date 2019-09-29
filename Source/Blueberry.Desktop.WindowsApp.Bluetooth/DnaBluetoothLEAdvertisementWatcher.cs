@@ -32,7 +32,7 @@ namespace Blueberry.Desktop.WindowsApp.Bluetooth
         private readonly GattServiceIds mGattServiceIds;
 
         /// <summary>
-        /// A thread lock object for this class
+        /// A thread lock object for this class 
         /// </summary>
         private readonly object mThreadLock = new object();
 
@@ -160,6 +160,7 @@ namespace Blueberry.Desktop.WindowsApp.Bluetooth
             // Is new discovery?
             var newDiscovery = false;
             var existingName = default(string);
+            var nameChanged = false;
 
             // Lock your doors
             lock (mThreadLock)
@@ -171,19 +172,21 @@ namespace Blueberry.Desktop.WindowsApp.Bluetooth
                 if (!newDiscovery)
                     // Store the old name
                     existingName = mDiscoveredDevices[device.DeviceId].Name;
-            }
 
-            // Name changed?
-            var nameChanged =
-                // If it already exists
-                !newDiscovery &&
-                // And is not a blank  name
-                !string.IsNullOrEmpty(device.Name) &&
-                // And the name is different
-                existingName != device.Name;
+                // Name changed?
+                nameChanged =
+                    // If it already exists
+                    !newDiscovery &&
+                    // And is not a blank  name
+                    !string.IsNullOrEmpty(device.Name) &&
+                    // And the name is different
+                    existingName != device.Name;
 
-            lock (mThreadLock)
-            {
+                // If we are no longer listening...
+                if (!Listening)
+                    // Don't bother adding to the list and do nothing
+                    return;
+
                 // Add/update the device in the dictionary
                 mDiscoveredDevices[device.DeviceId] = device;
             }
@@ -258,7 +261,7 @@ namespace Blueberry.Desktop.WindowsApp.Bluetooth
                 canPair: device.DeviceInformation.Pairing.CanPair,
                 // Is Paired?
                 paired: device.DeviceInformation.Pairing.IsPaired
-            ); ;
+            );
         }
 
         /// <summary>

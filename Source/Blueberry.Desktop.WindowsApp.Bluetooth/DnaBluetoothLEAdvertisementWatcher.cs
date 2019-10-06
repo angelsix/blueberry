@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Advertisement;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
+using Windows.Devices.Enumeration;
 
 namespace Blueberry.Desktop.WindowsApp.Bluetooth
 {
@@ -222,6 +223,7 @@ namespace Blueberry.Desktop.WindowsApp.Bluetooth
             if (device == null)
                 return null;
 
+            // NOTE: This can throw a System.Exception for failures
             // Get GATT services that are available
             var gatt = await device.GetGattServicesAsync().AsTask();
 
@@ -234,11 +236,6 @@ namespace Blueberry.Desktop.WindowsApp.Bluetooth
                     // This ID contains the GATT Profile Assigned number we want!
                     // TODO: Get more info and connect
                     var gattProfileId = service.Uuid;
-
-                    if (service.Uuid.ToString("N").Substring(4, 4) == "1808")
-                    {
-                        System.Diagnostics.Debugger.Break();
-                    }
                 }
             }
 
@@ -328,6 +325,53 @@ namespace Blueberry.Desktop.WindowsApp.Bluetooth
                 // Clear any devices
                 mDiscoveredDevices.Clear();
             }
+        }
+
+        /// <summary>
+        /// Attempts to pair to a BLE device, by ID
+        /// </summary>
+        /// <param name="deviceId">The BLE device ID</param>
+        /// <returns></returns>
+        public async Task PairToDeviceAsync(string deviceId)
+        {
+            // Get bluetooth device info
+            using var device = await BluetoothLEDevice.FromIdAsync(deviceId).AsTask();
+
+            // Null guard
+            if (device == null)
+                // TODO: Localize
+                throw new ArgumentNullException("Failed to get information about the Bluetooth device");
+
+            // If we are already paired...
+            if (device.DeviceInformation.Pairing.IsPaired)
+                // Do nothing
+                return;
+
+            // Listen out for pairing request
+            device.DeviceInformation.Pairing.Custom.PairingRequested += (sender, args) =>
+            {
+                // Log it
+                // TODO: Remove
+                Console.WriteLine("Accepting pairing request...");
+
+                // Accept all attempts
+                args.Accept(); // <-- Could enter a pin in here to accept
+            };
+
+            // Try and pair to the device
+            var result = await device.DeviceInformation.Pairing.Custom.PairAsync(
+                // For Contour we should try Provide Pin
+                // TODO: Try different types to see if any work
+                DevicePairingKinds.ProvidePin
+                ).AsTask();
+
+            // Log the result
+            if (result.Status == DevicePairingResultStatus.Paired)
+                // TODO: Remove
+                Console.WriteLine("Pairing successful");
+            else
+                // TODO: Remove
+                Console.WriteLine($"Pairing failed: {result.Status}");
         }
 
         #endregion

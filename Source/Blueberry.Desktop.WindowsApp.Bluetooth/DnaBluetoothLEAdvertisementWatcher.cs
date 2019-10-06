@@ -337,6 +337,8 @@ namespace Blueberry.Desktop.WindowsApp.Bluetooth
             // Get bluetooth device info
             using var device = await BluetoothLEDevice.FromIdAsync(deviceId).AsTask();
 
+            var deviceInformationCustomePairing = device.DeviceInformation.Pairing.Custom;
+
             // Null guard
             if (device == null)
                 // TODO: Localize
@@ -348,22 +350,18 @@ namespace Blueberry.Desktop.WindowsApp.Bluetooth
                 return;
 
             // Listen out for pairing request
-            device.DeviceInformation.Pairing.Custom.PairingRequested += (sender, args) =>
+            deviceInformationCustomePairing.PairingRequested += (sender, args) =>
             {
                 // Log it
                 // TODO: Remove
                 Console.WriteLine("Accepting pairing request...");
 
                 // Accept all attempts
-                args.Accept(); // <-- Could enter a pin in here to accept
+                args.Accept();
             };
 
             // Try and pair to the device
-            var result = await device.DeviceInformation.Pairing.Custom.PairAsync(
-                // For Contour we should try Provide Pin
-                // TODO: Try different types to see if any work
-                DevicePairingKinds.ProvidePin
-                ).AsTask();
+            var result = await deviceInformationCustomePairing.PairAsync(DevicePairingKinds.ConfirmOnly).AsTask(); ;
 
             // Log the result
             if (result.Status == DevicePairingResultStatus.Paired)

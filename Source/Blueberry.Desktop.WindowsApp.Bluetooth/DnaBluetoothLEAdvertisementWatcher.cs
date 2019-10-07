@@ -340,7 +340,7 @@ namespace Blueberry.Desktop.WindowsApp.Bluetooth
             // Null guard
             if (device == null)
                 // TODO: Localize
-                throw new ArgumentNullException("Failed to get information about the Bluetooth device");
+                throw new ArgumentException("Failed to get the Bluetooth device from the specified ID.", nameof(deviceId));
 
             // If we are already paired...
             if (device.DeviceInformation.Pairing.IsPaired)
